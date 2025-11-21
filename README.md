@@ -54,3 +54,7 @@ docker compose up -d --build
 ```
 
 The app will be available at `http://localhost:8080`.
+
+## 📄 License
+
+This project is licensed under the [GNU General Public License v3.0](LICENSE).
