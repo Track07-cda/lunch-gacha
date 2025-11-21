@@ -4,6 +4,7 @@ import { useRestaurants } from './composables/useRestaurants'
 import RestaurantList from './components/RestaurantList.vue'
 import RestaurantForm from './components/RestaurantForm.vue'
 import GachaponMachine from './components/GachaponMachine.vue'
+import logoUrl from './assets/logo.png'
 
 const { 
   restaurants, 
@@ -38,7 +39,10 @@ const triggerFileInput = () => {
 <template>
   <div class="app-container">
     <header class="app-header">
-      <h1>🍱 Lunch Gotcha</h1>
+      <div class="logo-container">
+        <img :src="logoUrl" alt="Lunch Gacha Logo" class="app-logo" />
+        <h1>Lunch Gacha</h1>
+      </div>
       <nav class="nav-controls">
         <button 
           @click="mode = 'list'" 
@@ -60,6 +64,13 @@ const triggerFileInput = () => {
     <main class="main-content">
       <transition name="fade" mode="out-in">
         <div v-if="mode === 'list'" key="list" class="list-view">
+          <RestaurantForm @add="addRestaurant" />
+          <RestaurantList 
+            :restaurants="restaurants" 
+            @remove="removeRestaurant"
+            @update="updateRestaurant"
+          />
+          
           <div class="data-controls">
             <button @click="exportData" class="btn-secondary">Export JSON</button>
             <button @click="triggerFileInput" class="btn-secondary">Import JSON</button>
@@ -71,13 +82,6 @@ const triggerFileInput = () => {
               @change="handleImport"
             >
           </div>
-          
-          <RestaurantForm @add="addRestaurant" />
-          <RestaurantList 
-            :restaurants="restaurants" 
-            @remove="removeRestaurant"
-            @update="updateRestaurant"
-          />
         </div>
 
         <div v-else key="gacha" class="gacha-view">
@@ -92,89 +96,116 @@ const triggerFileInput = () => {
 .app-container {
   max-width: 600px;
   margin: 0 auto;
-  min-height: 100vh;
+  height: 100vh; /* Fixed height to prevent body scroll */
   display: flex;
   flex-direction: column;
+  background: transparent; /* Let body background show */
 }
 
 .app-header {
-  padding: 1rem;
+  padding: 1rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2); /* Darker, more subtle */
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  position: sticky;
-  top: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   z-index: 50;
+  flex-shrink: 0;
 }
 
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+
 h1 {
-  font-size: 1.5rem;
+  font-size: 1.2rem; /* Slightly smaller, more elegant */
+  font-weight: 700;
   margin: 0;
   background: linear-gradient(to right, #ff9a9e, #fad0c4);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  letter-spacing: 0.5px;
 }
 
 .nav-controls {
   display: flex;
-  gap: 10px;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 5px;
+  gap: 5px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px;
   border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .nav-btn {
   background: none;
   border: none;
   color: rgba(255, 255, 255, 0.6);
-  padding: 5px 15px;
-  border-radius: 15px;
+  padding: 6px 16px;
+  border-radius: 16px;
   cursor: pointer;
   transition: all 0.3s;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .nav-btn.active {
-  background: white;
-  color: #333;
-  font-weight: bold;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 .main-content {
   flex: 1;
-  padding: 1rem;
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Prevent scroll on main content, let children scroll */
+  overflow: hidden;
 }
 
 .list-view {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0; /* Crucial for nested flex scrolling */
+  min-height: 0;
+  padding: 1rem;
+  gap: 1rem;
 }
 
 .data-controls {
   display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-bottom: 1rem;
+  justify-content: center; /* Center buttons */
+  gap: 15px;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
+  background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 8px 16px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .btn-secondary:hover {

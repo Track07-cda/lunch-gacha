@@ -229,7 +229,7 @@ watch(() => props.restaurants, () => {
             :disabled="isSpinning || restaurants.length === 0"
             :class="{ spinning: isSpinning }"
           >
-            {{ isSpinning ? 'SPINNING...' : 'SPIN' }}
+            START
           </button>
         </div>
         <div class="chute-opening"></div>
@@ -330,7 +330,6 @@ watch(() => props.restaurants, () => {
 }
 
 .spin-btn:disabled {
-  opacity: 0.7;
   cursor: not-allowed;
 }
 

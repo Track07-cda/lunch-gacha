@@ -98,4 +98,30 @@ const handleSubmit = () => {
 .btn-add:hover {
   transform: translateY(-2px);
 }
+
+@media (max-width: 480px) {
+  .restaurant-form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+
+  .form-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .input-name {
+    width: 100%;
+  }
+
+  .weight-control {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .btn-add {
+    width: 100%;
+  }
+}
 </style>
