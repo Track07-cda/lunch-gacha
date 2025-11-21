@@ -26,7 +26,7 @@ const handleSubmit = () => {
         class="input-name"
       >
       <div class="weight-control">
-        <label>Weight:</label>
+        <label>⚖️</label>
         <input 
           v-model.number="weight" 
           type="number" 
@@ -43,6 +43,7 @@ const handleSubmit = () => {
 <style scoped>
 .restaurant-form {
   display: flex;
+  /* flex-wrap: wrap; Removed to force single line */
   gap: 10px;
   padding: 1rem;
   background: rgba(255, 255, 255, 0.1);
@@ -61,6 +62,7 @@ const handleSubmit = () => {
 
 .input-name {
   flex: 2;
+  min-width: 80px; /* Reduced min-width to allow fitting */
   padding: 8px 12px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
@@ -93,6 +95,7 @@ const handleSubmit = () => {
   font-weight: bold;
   cursor: pointer;
   transition: transform 0.2s;
+  flex-shrink: 0; /* Prevent squashing */
 }
 
 .btn-add:hover {
