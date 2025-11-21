@@ -165,6 +165,7 @@ const cancelEdit = () => {
 
 .edit-input {
   flex: 2;
+  min-width: 40px; /* Allow shrinking on mobile */
 }
 
 .edit-weight {
