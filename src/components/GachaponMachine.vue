@@ -1,5 +1,6 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import Matter from 'matter-js'
 import { pickWeighted } from '../utils/random'
 
 const props = defineProps({
@@ -9,9 +10,145 @@ const props = defineProps({
   }
 })
 
+const canvasRef = ref(null)
+const containerRef = ref(null)
 const isSpinning = ref(false)
-const result = ref(null)
 const showResult = ref(false)
+const result = ref(null)
+
+// Matter.js variables
+let engine = null
+let render = null
+let runner = null
+let capsules = []
+let wallBottom = null
+
+const COLORS = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#ff9f43', '#54a0ff', '#5f27cd']
+
+const initPhysics = () => {
+  if (!canvasRef.value || !containerRef.value) return
+
+  // Cleanup if exists
+  if (engine) {
+    Matter.Render.stop(render)
+    Matter.Runner.stop(runner)
+    Matter.Engine.clear(engine)
+    render.canvas.remove()
+    render.canvas = null
+    render.context = null
+    render.textures = {}
+  }
+
+  const width = 300
+  const height = 400
+
+  // Create Engine
+  engine = Matter.Engine.create()
+  engine.gravity.y = 0.5 // Reduced gravity
+  
+  // Create Renderer
+  render = Matter.Render.create({
+    element: containerRef.value,
+    engine: engine,
+    canvas: canvasRef.value,
+    options: {
+      width,
+      height,
+      wireframes: false,
+      background: 'transparent',
+      pixelRatio: window.devicePixelRatio
+    }
+  })
+
+  // Create Walls (Dome shape approximation)
+  const wallThickness = 20
+  const domeRadius = 140
+  const centerX = width / 2
+  const centerY = 160 // Center of the dome
+
+  const walls = [
+    // Left vertical wall (lower part)
+    Matter.Bodies.rectangle(centerX - domeRadius, centerY + 100, wallThickness, 200, { isStatic: true, render: { visible: false } }),
+    // Right vertical wall (lower part)
+    Matter.Bodies.rectangle(centerX + domeRadius, centerY + 100, wallThickness, 200, { isStatic: true, render: { visible: false } }),
+  ]
+
+  // Create dome top using multiple segments
+  const segments = 10
+  for (let i = 0; i < segments; i++) {
+    const angle = Math.PI + (Math.PI * i) / (segments - 1) // From PI to 2PI (semicircle)
+    const x = centerX + domeRadius * Math.cos(angle)
+    const y = centerY + domeRadius * Math.sin(angle)
+    
+    const segment = Matter.Bodies.rectangle(x, y, 50, wallThickness, {
+      isStatic: true,
+      angle: angle + Math.PI / 2,
+      render: { visible: false }
+    })
+    walls.push(segment)
+  }
+
+  // Bottom Gate (The part that opens)
+  wallBottom = Matter.Bodies.rectangle(centerX, height - 10, width, 20, { 
+    isStatic: true,
+    render: { fillStyle: '#333' }
+  })
+
+  // Invisible funnel walls to guide balls to the hole
+  const funnelLeft = Matter.Bodies.rectangle(centerX - 60, height - 60, 100, 20, { 
+    isStatic: true, 
+    angle: Math.PI / 4,
+    render: { visible: false } 
+  })
+  const funnelRight = Matter.Bodies.rectangle(centerX + 60, height - 60, 100, 20, { 
+    isStatic: true, 
+    angle: -Math.PI / 4,
+    render: { visible: false } 
+  })
+
+  Matter.Composite.add(engine.world, [...walls, wallBottom, funnelLeft, funnelRight])
+
+  // Add Capsules
+  createCapsules()
+
+  // Run
+  runner = Matter.Runner.create()
+  Matter.Runner.run(runner, engine)
+  Matter.Render.run(render)
+}
+
+const createCapsules = () => {
+  // Remove existing
+  if (capsules.length > 0) {
+    Matter.Composite.remove(engine.world, capsules)
+  }
+
+  capsules = []
+  const count = Math.min(15, Math.max(3, props.restaurants.length)) // Reduced count: 3 to 15 balls
+  
+  for (let i = 0; i < count; i++) {
+    const radius = 25 
+    // Spawn closer to center to avoid walls
+    const x = Math.random() * 100 + 100 // 100-200
+    const y = Math.random() * 100 + 100 // 100-200
+    const color = COLORS[i % COLORS.length]
+    
+    const circle = Matter.Bodies.circle(x, y, radius, {
+      restitution: 0.5, // Less bouncy
+      friction: 0.01,
+      frictionAir: 0.02, // More air resistance to slow them down
+      render: {
+        fillStyle: color,
+        strokeStyle: 'rgba(0,0,0,0.2)',
+        lineWidth: 2
+      }
+    })
+    
+    capsules.push(circle)
+  }
+
+  Matter.Composite.add(engine.world, capsules)
+}
 
 const spin = () => {
   if (isSpinning.value || props.restaurants.length === 0) return
@@ -20,58 +157,89 @@ const spin = () => {
   showResult.value = false
   result.value = null
 
-  // Animation timing
-  setTimeout(() => {
-    const selected = pickWeighted(props.restaurants)
-    result.value = selected
+  // Apply single kick (impulse) with random delays
+  capsules.forEach(body => {
+    const delay = Math.random() * 50 // Reduced delay for tighter kick synchronization
     
-    // Stop spinning, show capsule falling
     setTimeout(() => {
-      isSpinning.value = false
-      showResult.value = true
-    }, 1000)
-  }, 1500)
+      const angle = -Math.random() * Math.PI // Random angle in upper hemisphere (0 to -PI)
+      const force = Math.random() * 0.1 + 0.05 // Reduced random force magnitude (was 0.15 + 0.1)
+      
+      Matter.Body.applyForce(body, body.position, {
+        x: Math.cos(angle) * force,
+        y: Math.sin(angle) * force
+      })
+      // Add some spin
+      Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.5)
+    }, delay)
+  })
+
+  // Stop spinning and dispense quickly
+  setTimeout(() => {
+    dispenseCapsule()
+  }, 1000) // Slightly increased to account for delays
 }
+
+const dispenseCapsule = () => {
+  // Select winner logic
+  const selected = pickWeighted(props.restaurants)
+  result.value = selected
+
+  // Just show result overlay directly without physically dispensing a ball
+  isSpinning.value = false
+  showResult.value = true
+}
+
+// Removed addNewBall as it's no longer needed
 
 const closeResult = () => {
   showResult.value = false
   result.value = null
 }
+
+onMounted(() => {
+  initPhysics()
+})
+
+onUnmounted(() => {
+  if (runner) Matter.Runner.stop(runner)
+  if (render) Matter.Render.stop(render)
+  if (engine) Matter.Engine.clear(engine)
+})
+
+watch(() => props.restaurants, () => {
+  createCapsules()
+}, { deep: true })
+
 </script>
 
 <template>
   <div class="gachapon-container">
-    <div class="machine" :class="{ shaking: isSpinning }">
-      <div class="dome">
-        <div class="capsules">
-          <!-- Decorative capsules inside -->
-          <div class="capsule c1"></div>
-          <div class="capsule c2"></div>
-          <div class="capsule c3"></div>
-          <div class="capsule c4"></div>
-        </div>
+    <div class="machine-visual">
+      <div class="dome-glass"></div>
+      <div ref="containerRef" class="physics-container">
+        <canvas ref="canvasRef"></canvas>
       </div>
-      <div class="body">
-        <div class="knob-area">
+      
+      <div class="machine-body">
+        <div class="controls">
           <button 
-            class="knob" 
+            class="spin-btn" 
             @click="spin" 
             :disabled="isSpinning || restaurants.length === 0"
             :class="{ spinning: isSpinning }"
           >
-            PRESS
+            {{ isSpinning ? 'SPINNING...' : 'SPIN' }}
           </button>
         </div>
-        <div class="chute">
-          <div class="hole"></div>
-        </div>
+        <div class="chute-opening"></div>
       </div>
     </div>
 
     <div v-if="showResult" class="result-overlay" @click="closeResult">
       <div class="result-capsule open">
         <div class="result-content">
-          <h3>Let's eat at:</h3>
+          <h3>Winner!</h3>
           <div class="winner-name">{{ result?.name }}</div>
           <p class="click-hint">Click to close</p>
         </div>
@@ -90,133 +258,98 @@ const closeResult = () => {
   position: relative;
 }
 
-.machine {
-  width: 300px;
-  height: 500px;
+.machine-visual {
   position: relative;
+  width: 320px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.dome {
-  width: 240px;
-  height: 240px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50% 50% 0 0;
-  border: 4px solid rgba(255, 255, 255, 0.5);
-  border-bottom: none;
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(2px);
-  z-index: 10;
-}
-
-.capsules {
+.dome-glass {
   position: absolute;
-  width: 100%;
-  height: 100%;
   top: 0;
-  left: 0;
+  left: 10px;
+  width: 300px;
+  height: 300px;
+  border-radius: 50% 50% 0 0;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), rgba(255,255,255,0.1) 60%, rgba(255,255,255,0));
+  border: 4px solid rgba(255,255,255,0.3);
+  border-bottom: none;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.2);
 }
 
-.capsule {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  position: absolute;
-  border: 2px solid rgba(0,0,0,0.1);
+.physics-container {
+  width: 300px;
+  height: 400px; /* Taller to include chute area */
+  background: rgba(0,0,0,0.2);
+  border-radius: 150px 150px 0 0;
+  overflow: hidden;
 }
 
-.c1 { background: #ff6b6b; top: 60%; left: 20%; transform: rotate(15deg); }
-.c2 { background: #4ecdc4; top: 70%; left: 50%; transform: rotate(-10deg); }
-.c3 { background: #ffe66d; top: 50%; left: 60%; transform: rotate(45deg); }
-.c4 { background: #ff9f43; top: 80%; left: 30%; transform: rotate(90deg); }
-
-.body {
-  width: 260px;
-  height: 260px;
+.machine-body {
+  width: 320px;
+  height: 150px;
   background: #ff6b6b;
+  margin-top: -100px; /* Overlap with physics container */
   border-radius: 20px;
-  border: 4px solid rgba(255, 255, 255, 0.5);
+  z-index: 5;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  z-index: 20;
-  margin-top: -10px;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  border: 4px solid rgba(255,255,255,0.2);
 }
 
-.knob-area {
-  background: rgba(0,0,0,0.1);
-  border-radius: 50%;
-  padding: 10px;
+.controls {
+  margin-bottom: 10px;
 }
 
-.knob {
+.spin-btn {
   width: 80px;
   height: 80px;
   border-radius: 50%;
   border: none;
   background: #feca57;
   box-shadow: 0 5px 0 #e1b12c;
-  cursor: pointer;
   font-weight: bold;
   color: #5f27cd;
-  font-size: 1.2rem;
+  cursor: pointer;
   transition: transform 0.1s;
+  z-index: 20;
+  position: relative;
 }
 
-.knob:active {
+.spin-btn:active:not(:disabled) {
   transform: translateY(5px);
   box-shadow: 0 0 0 #e1b12c;
 }
 
-.knob:disabled {
+.spin-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
 
-.chute {
-  width: 100px;
-  height: 60px;
-  background: #333;
-  border-radius: 10px 10px 40px 40px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  padding-bottom: 10px;
-}
-
-.hole {
-  width: 60px;
-  height: 20px;
-  background: #000;
-  border-radius: 10px;
-}
-
-/* Animations */
-.shaking .dome .capsules {
-  animation: shake 0.5s infinite;
-}
-
-.knob.spinning {
+.spin-btn.spinning {
   animation: spin 1s infinite linear;
-}
-
-@keyframes shake {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(5px, 5px) rotate(5deg); }
-  50% { transform: translate(0, -5px) rotate(0deg); }
-  75% { transform: translate(-5px, 5px) rotate(-5deg); }
-  100% { transform: translate(0, 0) rotate(0deg); }
 }
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.chute-opening {
+  width: 80px;
+  height: 40px;
+  background: #333;
+  border-radius: 0 0 20px 20px;
+  position: absolute;
+  bottom: 10px;
 }
 
 /* Result Overlay */

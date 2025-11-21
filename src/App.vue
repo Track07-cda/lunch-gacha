@@ -115,6 +115,7 @@ h1 {
   margin: 0;
   background: linear-gradient(to right, #ff9a9e, #fad0c4);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -146,6 +147,16 @@ h1 {
   flex: 1;
   padding: 1rem;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Prevent scroll on main content, let children scroll */
+}
+
+.list-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Crucial for nested flex scrolling */
 }
 
 .data-controls {
@@ -153,6 +164,7 @@ h1 {
   justify-content: flex-end;
   gap: 10px;
   margin-bottom: 1rem;
+  flex-shrink: 0;
 }
 
 .btn-secondary {
@@ -171,6 +183,14 @@ h1 {
 
 .hidden {
   display: none;
+}
+
+.gacha-view {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Transitions */

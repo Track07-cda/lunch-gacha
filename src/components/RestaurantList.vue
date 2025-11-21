@@ -49,7 +49,10 @@ const cancelEdit = () => {
         <div v-else class="view-mode">
           <div class="info">
             <span class="name">{{ restaurant.name }}</span>
-            <span class="weight-badge">Weight: {{ restaurant.weight }}</span>
+            <div class="weight-badge" title="Weight">
+              <span class="weight-icon">⚖️</span>
+              {{ restaurant.weight }}
+            </div>
           </div>
           <div class="actions">
             <button @click="startEdit(restaurant)" class="btn-icon">✏️</button>
@@ -64,9 +67,10 @@ const cancelEdit = () => {
 <style scoped>
 .restaurant-list {
   width: 100%;
-  max-height: 60vh;
+  flex: 1; /* Fill remaining space */
   overflow-y: auto;
   padding-right: 5px;
+  min-height: 0; /* Crucial for nested flex scrolling */
 }
 
 .empty-state {
@@ -101,18 +105,36 @@ const cancelEdit = () => {
   align-items: center;
   gap: 10px;
   flex: 1;
+  min-width: 0; /* Allow truncation */
 }
 
 .name {
   font-weight: 500;
   font-size: 1.1rem;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .weight-badge {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   background: rgba(255, 255, 255, 0.1);
-  padding: 2px 8px;
-  border-radius: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Align icons to the left */
+  padding-left: 10px; /* Add padding for visual balance */
+  gap: 6px;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.8);
+  min-width: 70px; /* Fixed width for alignment */
+}
+
+.weight-icon {
+  font-size: 0.9rem;
+  opacity: 0.7;
 }
 
 .btn-icon {
