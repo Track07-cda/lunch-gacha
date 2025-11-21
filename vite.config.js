@@ -4,16 +4,17 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/lunch-gacha/', // Set to your repository name
   plugins: [
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Lunch Gotcha',
-        short_name: 'LunchGotcha',
+        name: 'Lunch Gacha',
+        short_name: 'LunchGacha',
         description: 'Decide where to eat with a Gachapon machine!',
-        theme_color: '#ffffff',
+        theme_color: '#1a1a2e',
         icons: [
           {
             src: 'pwa-192x192.png',
