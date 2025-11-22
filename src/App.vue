@@ -72,19 +72,21 @@ const triggerFileInput = () => {
             :restaurants="restaurants" 
             @remove="removeRestaurant"
             @update="updateRestaurant"
-          />
-          
-          <div class="data-controls">
-            <button @click="exportData" class="btn-secondary">Export JSON</button>
-            <button @click="triggerFileInput" class="btn-secondary">Import JSON</button>
-            <input 
-              ref="fileInput" 
-              type="file" 
-              accept=".json" 
-              class="hidden" 
-              @change="handleImport"
-            >
-          </div>
+          >
+            <template #footer>
+              <div class="data-controls">
+                <button @click="exportData" class="btn-secondary">Export JSON</button>
+                <button @click="triggerFileInput" class="btn-secondary">Import JSON</button>
+                <input 
+                  ref="fileInput" 
+                  type="file" 
+                  accept=".json" 
+                  class="hidden" 
+                  @change="handleImport"
+                >
+              </div>
+            </template>
+          </RestaurantList>
         </div>
 
         <!-- Gacha View -->

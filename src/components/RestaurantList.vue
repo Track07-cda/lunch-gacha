@@ -61,6 +61,7 @@ const cancelEdit = () => {
         </div>
       </li>
     </transition-group>
+    <slot name="footer"></slot>
   </div>
 </template>
 
@@ -125,11 +126,12 @@ const cancelEdit = () => {
   display: flex;
   align-items: center;
   justify-content: flex-start; /* Align icons to the left */
-  padding-left: 10px; /* Add padding for visual balance */
+  padding-left: 8px; /* Add padding for visual balance */
   gap: 6px;
   white-space: nowrap;
   color: rgba(255, 255, 255, 0.8);
   min-width: 70px; /* Fixed width for alignment */
+  max-width: 70px;
 }
 
 .weight-icon {
