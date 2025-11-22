@@ -43,7 +43,6 @@ const handleSubmit = () => {
 <style scoped>
 .restaurant-form {
   display: flex;
-  /* flex-wrap: wrap; Removed to force single line */
   gap: 10px;
   padding: 1rem;
   background: rgba(255, 255, 255, 0.1);
