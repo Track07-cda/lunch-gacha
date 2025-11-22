@@ -27,8 +27,9 @@ const saveEdit = () => {
   }
 }
 
-const cancelEdit = () => {
-  editingId.value = null
+const toggle = (restaurant) => {
+  if (editingId.value === restaurant.id) return // Don't toggle while editing
+  emit('update', restaurant.id, { enabled: !restaurant.enabled })
 }
 </script>
 
@@ -39,8 +40,14 @@ const cancelEdit = () => {
     </div>
     
     <transition-group name="list" tag="ul" class="list">
-      <li v-for="restaurant in restaurants" :key="restaurant.id" class="list-item">
-        <div v-if="editingId === restaurant.id" class="edit-mode">
+      <li 
+        v-for="restaurant in restaurants" 
+        :key="restaurant.id" 
+        class="list-item"
+        :class="{ disabled: restaurant.enabled === false }"
+        @click="toggle(restaurant)"
+      >
+        <div v-if="editingId === restaurant.id" class="edit-mode" @click.stop>
           <input v-model="editName" class="edit-input">
           <input v-model.number="editWeight" type="number" class="edit-weight">
           <button @click="saveEdit" class="btn-icon">✅</button>
@@ -55,8 +62,8 @@ const cancelEdit = () => {
             </div>
           </div>
           <div class="actions">
-            <button @click="startEdit(restaurant)" class="btn-icon">✏️</button>
-            <button @click="emit('remove', restaurant.id)" class="btn-icon delete">🗑️</button>
+            <button @click.stop="startEdit(restaurant)" class="btn-icon">✏️</button>
+            <button @click.stop="emit('remove', restaurant.id)" class="btn-icon delete">🗑️</button>
           </div>
         </div>
       </li>
@@ -92,6 +99,16 @@ const cancelEdit = () => {
   border-radius: 8px;
   padding: 10px 15px;
   transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.list-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.list-item.disabled {
+  opacity: 0.5;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .view-mode, .edit-mode {

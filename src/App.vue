@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRestaurants } from './composables/useRestaurants'
 import RestaurantList from './components/RestaurantList.vue'
 import RestaurantForm from './components/RestaurantForm.vue'
@@ -17,6 +17,10 @@ const {
 
 const mode = ref('list') // 'list' or 'gacha'
 const fileInput = ref(null)
+
+const activeRestaurants = computed(() => {
+  return restaurants.value.filter(r => r.enabled !== false)
+})
 
 const handleImport = async (event) => {
   const file = event.target.files[0]
@@ -91,7 +95,7 @@ const triggerFileInput = () => {
 
         <!-- Gacha View -->
         <div class="view-container gacha-view" :class="{ active: mode === 'gacha' }">
-          <GachaponMachine :restaurants="restaurants" />
+          <GachaponMachine :restaurants="activeRestaurants" />
         </div>
       </main>
     </div>

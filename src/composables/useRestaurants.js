@@ -10,7 +10,11 @@ export function useRestaurants() {
         const stored = localStorage.getItem(STORAGE_KEY)
         if (stored) {
             try {
-                restaurants.value = JSON.parse(stored)
+                const data = JSON.parse(stored)
+                restaurants.value = data.map(r => ({
+                    ...r,
+                    enabled: r.enabled ?? true
+                }))
             } catch (e) {
                 console.error('Failed to parse restaurants', e)
                 restaurants.value = []
@@ -30,7 +34,8 @@ export function useRestaurants() {
         restaurants.value.push({
             id: Date.now(),
             name,
-            weight: Number(weight)
+            weight: Number(weight),
+            enabled: true
         })
     }
 
@@ -63,7 +68,11 @@ export function useRestaurants() {
                 try {
                     const data = JSON.parse(e.target.result)
                     if (Array.isArray(data)) {
-                        restaurants.value = data
+                        // Ensure all items have enabled property
+                        restaurants.value = data.map(r => ({
+                            ...r,
+                            enabled: r.enabled ?? true
+                        }))
                         resolve(true)
                     } else {
                         reject(new Error('Invalid format'))
