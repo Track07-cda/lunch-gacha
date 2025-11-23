@@ -14,6 +14,7 @@ const isEditing = ref(false)
 const editName = ref('')
 const editWeight = ref(1)
 const nameInput = ref(null)
+const hasError = ref(false)
 
 const startEdit = () => {
   editName.value = props.restaurant.name
@@ -25,17 +26,24 @@ const startEdit = () => {
 }
 
 const saveEdit = () => {
-  if (editName.value.trim()) {
+  const isValidName = editName.value.trim().length > 0
+  const isValidWeight = editWeight.value >= 0 && Number.isInteger(editWeight.value)
+
+  if (isValidName && isValidWeight) {
     emit('update', props.restaurant.id, { 
       name: editName.value, 
       weight: editWeight.value 
     })
     isEditing.value = false
+    hasError.value = false
+  } else {
+    hasError.value = true
   }
 }
 
 const cancelEdit = () => {
   isEditing.value = false
+  hasError.value = false
 }
 
 const toggle = () => {
@@ -55,13 +63,17 @@ const toggle = () => {
         ref="nameInput"
         v-model="editName" 
         class="edit-input"
+        :class="{ 'input-error': hasError && !editName.trim() }"
         @keyup.enter="saveEdit"
         @keyup.esc="cancelEdit"
       >
       <input 
         v-model.number="editWeight" 
         type="number" 
+        min="0"
+        step="1"
         class="edit-weight"
+        :class="{ 'input-error': hasError && (editWeight < 0 || !Number.isInteger(editWeight)) }"
         @keyup.enter="saveEdit"
         @keyup.esc="cancelEdit"
       >
@@ -181,5 +193,10 @@ const toggle = () => {
 
 .edit-weight {
   width: 60px;
+}
+
+.input-error {
+  border-color: #ff4444 !important;
+  background: rgba(255, 68, 68, 0.1);
 }
 </style>
